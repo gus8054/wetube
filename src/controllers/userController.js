@@ -53,6 +53,12 @@ export const postLogin = async (req, res) => {
   //2. 아이디와 비밀번호 맞는지 확인
   const match = await bcrypt.compare(password, user.password);
   if (!match) {
+    if (user.socialOnly) {
+      return res.status(400).render("login", {
+        pageTitle: "Log in",
+        errorMessage: "소셜 로그인을 이용해주세요.",
+      });
+    }
     return res.status(400).render("login", {
       pageTitle: "Log in",
       errorMessage: "Wrong password",
