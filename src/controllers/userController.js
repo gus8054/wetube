@@ -51,6 +51,7 @@ export const postLogin = async (req, res) => {
     });
   }
   //2. 아이디와 비밀번호 맞는지 확인
+  const match = await bcrypt.compare(password, user.password);
   if (!match) {
     return res.status(400).render("login", {
       pageTitle: "Log in",
@@ -93,15 +94,6 @@ export const finishGithubLogin = async (req, res) => {
   if ("access_token" in tokenRequest) {
     const { access_token } = tokenRequest;
     const apiUrl = "https://api.github.com";
-    const userData = await (
-      await fetch(`${apiUrl}/user`, {
-        headers: {
-          Authorization: `token ${access_token}`,
-        },
-      })
-    ).json();
-    console.log(userData);
-
     const emailData = await (
       await fetch(`${apiUrl}/user/emails`, {
         headers: {
@@ -121,6 +113,14 @@ export const finishGithubLogin = async (req, res) => {
       //등록된 이메일이 아니라면 소셜로그인으로 회원가입후 로그인
       const password = await bcrypt.hash(process.env.NO_PASSWORD, 5);
       console.log("소셜로그인으로 회원가입");
+      const userData = await (
+        await fetch(`${apiUrl}/user`, {
+          headers: {
+            Authorization: `token ${access_token}`,
+          },
+        })
+      ).json();
+      console.log(userData);
       user = await User.create({
         email: emailObj.email,
         username: userData.login,
@@ -128,6 +128,7 @@ export const finishGithubLogin = async (req, res) => {
         socialOnly: true,
         name: userData.name ? userData.name : "No Name",
         location: userData.location ? userData.location : "No Location",
+        avatar_url: userData.avatar_url,
       });
     }
     req.session.loggedIn = true;
