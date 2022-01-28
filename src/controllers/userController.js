@@ -43,7 +43,7 @@ export const getLogin = (req, res) =>
 export const postLogin = async (req, res) => {
   const { username, password } = req.body;
   //1. 아이디가 있는지 확인
-  const user = await User.findOne({ username });
+  const user = await User.findOne({ username, socialOnly: false });
   if (!user) {
     return res.status(400).render("login", {
       pageTitle: "Log in",
@@ -51,14 +51,7 @@ export const postLogin = async (req, res) => {
     });
   }
   //2. 아이디와 비밀번호 맞는지 확인
-  const match = await bcrypt.compare(password, user.password);
   if (!match) {
-    if (user.socialOnly) {
-      return res.status(400).render("login", {
-        pageTitle: "Log in",
-        errorMessage: "소셜 로그인을 이용해주세요.",
-      });
-    }
     return res.status(400).render("login", {
       pageTitle: "Log in",
       errorMessage: "Wrong password",
@@ -120,20 +113,15 @@ export const finishGithubLogin = async (req, res) => {
       (email) => email.primary === true && email.verified === true
     );
     if (!emailObj) {
-      return res.status(400).redirect("/login", {
-        pageTitle: "Log in",
-        errorMessage: "email을 확인할 수 없습니다.",
-      });
+      return res.redirect("/login");
     }
     console.log(emailObj);
-    const user = await User.findOne({
-      $or: [{ email: emailObj.email }, { username: userData.login }],
-    });
+    let user = await User.findOne({ email: emailObj.email });
     if (!user) {
-      //소셜로그인으로 회원가입후 로그인
+      //등록된 이메일이 아니라면 소셜로그인으로 회원가입후 로그인
       const password = await bcrypt.hash(process.env.NO_PASSWORD, 5);
       console.log("소셜로그인으로 회원가입");
-      const user = await User.create({
+      user = await User.create({
         email: emailObj.email,
         username: userData.login,
         password,
@@ -141,24 +129,11 @@ export const finishGithubLogin = async (req, res) => {
         name: userData.name ? userData.name : "No Name",
         location: userData.location ? userData.location : "No Location",
       });
-      req.session.loggedIn = true;
-      req.session.user = user;
-      console.log("회원가입후 로그인 성공");
-      return res.redirect("/");
-    } else {
-      if (!user.socialOnly) {
-        console.log("깃헙에 사용된 아이디나 이메일이 이미 존재함.");
-        return res.status(400).render("login", {
-          pageTitle: "Log in",
-          errorMessage: "일반 로그인을 이용해주세요.",
-        });
-      } else {
-        req.session.loggedIn = true;
-        req.session.user = user;
-        console.log("깃헙으로 로그인성공");
-        return res.redirect("/");
-      }
     }
+    req.session.loggedIn = true;
+    req.session.user = user;
+    console.log("로그인성공");
+    return res.redirect("/");
   } else {
     return res.redirect("/login");
   }
