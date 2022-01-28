@@ -93,14 +93,66 @@ export const finishGithubLogin = async (req, res) => {
 
   if ("access_token" in tokenRequest) {
     const { access_token } = tokenRequest;
-    const userRequest = await (
-      await fetch("https://api.github.com/user", {
+    const apiUrl = "https://api.github.com";
+    const userData = await (
+      await fetch(`${apiUrl}/user`, {
         headers: {
           Authorization: `token ${access_token}`,
         },
       })
     ).json();
-    console.log(userRequest);
+    console.log(userData);
+
+    const emailData = await (
+      await fetch(`${apiUrl}/user/emails`, {
+        headers: {
+          Authorization: `token ${access_token}`,
+        },
+      })
+    ).json();
+    const emailObj = emailData.find(
+      (email) => email.primary === true && email.verified === true
+    );
+    if (!emailObj) {
+      return res.status(400).redirect("/login", {
+        pageTitle: "Log in",
+        errorMessage: "email을 확인할 수 없습니다.",
+      });
+    }
+    console.log(emailObj);
+    const user = await User.findOne({
+      $or: [{ email: emailObj.email }, { username: userData.login }],
+    });
+    if (!user) {
+      //소셜로그인으로 회원가입후 로그인
+      const password = await bcrypt.hash(process.env.NO_PASSWORD, 5);
+      console.log("소셜로그인으로 회원가입");
+      const user = await User.create({
+        email: emailObj.email,
+        username: userData.login,
+        password,
+        socialOnly: true,
+        name: userData.name ? userData.name : "No Name",
+        location: userData.location ? userData.location : "No Location",
+      });
+      req.session.loggedIn = true;
+      req.session.user = user;
+      console.log("회원가입후 로그인 성공");
+      return res.redirect("/");
+    } else {
+      if (!user.socialOnly) {
+        console.log("깃헙에 사용된 아이디나 이메일이 이미 존재함.");
+        return res.status(400).render("login", {
+          pageTitle: "Log in",
+          errorMessage: "일반 로그인을 이용해주세요.",
+        });
+      } else {
+        req.session.loggedIn = true;
+        req.session.user = user;
+        console.log("깃헙으로 로그인성공");
+        return res.redirect("/");
+      }
+    }
   } else {
     return res.redirect("/login");
   }
