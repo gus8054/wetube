@@ -140,4 +140,7 @@ export const finishGithubLogin = async (req, res) => {
   }
 };
 export const see = (req, res) => res.render("home");
-export const logout = (req, res) => res.send("Log Out");
+export const logout = (req, res) => {
+  req.session.destroy();
+  return res.redirect("/");
+};
