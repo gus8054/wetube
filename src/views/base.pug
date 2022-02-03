@@ -10,11 +10,12 @@ html(lang="ko")
                 ul 
                     li 
                         a(href="/") home 
-                    li 
-                        a(href="/videos/upload") upload
+                    
                     li 
                         a(href="/search") Search
                     if loggedIn
+                        li 
+                            a(href="/videos/upload") upload
                         li 
                             a(href="/users/logout") Log out
                         li 
