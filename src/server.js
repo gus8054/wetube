@@ -30,6 +30,7 @@ app.use((req, res, next) => {
   console.log("로컬:", res.locals);
   next();
 });
+app.use("/uploads", express.static("uploads"));
 app.use("/", rootRouter);
 app.use("/users", userRouter);
 app.use("/videos", videoRouter);

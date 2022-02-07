@@ -2,6 +2,7 @@ import User from "../models/User";
 import bcrypt from "bcrypt";
 import fetch from "node-fetch";
 import { Octokit } from "@octokit/core";
+import Video from "../models/Video";
 
 export const getJoin = (req, res) => res.render("join", { pageTitle: "Join" });
 export const postJoin = async (req, res) => {
@@ -42,16 +43,17 @@ export const getEdit = (req, res) => {
 export const postEdit = async (req, res) => {
   const {
     session: {
-      user: { _id },
+      user: { _id, avatarUrl },
     },
     body: { email, name, username, location },
+    file,
   } = req;
-  const exists = await User.exists({ $or: [{ username }, { email }] });
-  if (exists) {
-    return res.status(400).render("edit-profile", {
-      errorMessage: "This username/email is already taken",
-    });
-  }
+  // const exists = await User.exists({ $or: [{ username }, { email }] });
+  // if (exists) {
+  //   return res.status(400).render("edit-profile", {
+  //     errorMessage: "This username/email is already taken",
+  //   });
+  // }
   const userUpdate = await User.findByIdAndUpdate(
     _id,
     {
@@ -59,6 +61,7 @@ export const postEdit = async (req, res) => {
       name,
       username,
       location,
+      avatarUrl: file ? file.path : avatarUrl,
     },
     { new: true }
   );
@@ -156,7 +159,7 @@ export const finishGithubLogin = async (req, res) => {
         socialOnly: true,
         name: userData.name ? userData.name : "No Name",
         location: userData.location ? userData.location : "No Location",
-        avatar_url: userData.avatar_url,
+        avatarUrl: userData.avatarUrl,
       });
     }
     req.session.loggedIn = true;
@@ -167,7 +170,17 @@ export const finishGithubLogin = async (req, res) => {
     return res.redirect("/login");
   }
 };
-export const see = (req, res) => res.render("home");
+export const see = async (req, res) => {
+  const { id } = req.params;
+  const user = await User.findById(id).populate("videos");
+  if (!user) {
+    return res.status(404).render("404page");
+  }
+  return res.render("user/profile", {
+    pageTitle: `${user.name}의 프로필`,
+    user,
+  });
+};
 export const logout = (req, res) => {
   req.session.destroy();
   return res.redirect("/");
