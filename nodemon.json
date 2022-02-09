@@ -1,0 +1,4 @@
+{
+  "ignore": ["assets/*", "src/client/*", "webpack.config.js"],
+  "exec": "npx babel-node src/init.js"
+}

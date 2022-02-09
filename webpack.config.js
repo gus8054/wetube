@@ -7,11 +7,13 @@ module.exports = {
       filename: "css/style.css",
     }),
   ],
+  watch: true,
   mode: "development",
   entry: "./src/client/js/main.js",
   output: {
     filename: "js/main.js",
     path: path.resolve(__dirname, "assets"),
+    clean: true,
   },
   module: {
     rules: [

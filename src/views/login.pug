@@ -8,10 +8,8 @@ block content
         input(type="text", name="username", required, placeholder="user name")
         input(type="password", name="password", required, placeholder="password")
         input(type="submit", value="Join")
-    hr
-    br  
-    a(href="/users/github/start") Continue with Github
-    div 
+        include partials/social-login
+    div.auth-switch
         span No account?
             a(href="/login") Join now &rarr;
 

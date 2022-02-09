@@ -7,8 +7,8 @@
     "url": "git+https://github.com/gus8054/wetube-reloaded.git"
   },
   "scripts": {
-    "dev": "nodemon --exec npx babel-node src/init.js",
-    "assets": "webpack --config webpack.config.js"
+    "dev:server": "nodemon",
+    "dev:assets": "webpack"
   },
   "author": "Donghyun",
   "license": "ISC",
